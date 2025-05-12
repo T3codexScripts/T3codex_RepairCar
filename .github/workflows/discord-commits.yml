@@ -1,0 +1,33 @@
+name: GitHub → Discord Push Notifications
+
+on:
+  push:
+    branches:
+      - main  # Adjust if your default branch has a different name
+
+jobs:
+  discord:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get commit summary
+        id: commitinfo
+        run: |
+          echo "MESSAGE<<EOF" >> $GITHUB_ENV
+          echo "📢 New push to **${{ github.repository }}** by \`${{ github.actor }}\`" >> $GITHUB_ENV
+          echo "" >> $GITHUB_ENV
+          echo "**Commit message:**" >> $GITHUB_ENV
+          echo "\`${{ github.event.head_commit.message }}\`" >> $GITHUB_ENV
+          echo "" >> $GITHUB_ENV
+          echo "**Changed files:**" >> $GITHUB_ENV
+          git diff-tree --no-commit-id --name-status -r ${{ github.sha }} >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      - name: Send to Discord
+        uses: Ilshidur/action-discord@master
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        with:
+          args: "${{ env.MESSAGE }}"
